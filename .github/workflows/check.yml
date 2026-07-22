@@ -1,4 +1,4 @@
-name: Check NX30Pro support
+name: Check NX30Pro
 
 on:
   workflow_dispatch:
@@ -8,19 +8,74 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Clone source
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
         run: |
-          git clone -b 25.12 https://github.com/chasey-dev/immortalwrt-mt798x-rebase.git source
+          sudo apt update
+          sudo apt install -y \
+            build-essential \
+            clang \
+            flex \
+            bison \
+            g++ \
+            gawk \
+            gettext \
+            git \
+            libncurses-dev \
+            libssl-dev \
+            python3 \
+            rsync \
+            unzip \
+            zlib1g-dev \
+            file \
+            wget \
+            curl
 
-      - name: Check NX30 files
+      - name: Update feeds
         run: |
-          cd source
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
 
-          echo "===== find nx30 ====="
-          find target/linux/mediatek -iname "*nx30*" || true
+      - name: Load config
+        run: |
+          cp files/.config .config
+          make defconfig
 
-          echo "===== grep nx30 ====="
-          grep -R "nx30" target/linux/mediatek || true
+      - name: Check configuration
+        run: |
+          echo "=============================="
+          echo "TARGET CONFIG"
+          echo "=============================="
+          grep "^CONFIG_TARGET" .config
 
-          echo "===== grep h3c ====="
-          grep -R "h3c" target/linux/mediatek || true
+          echo
+          echo "=============================="
+          echo "NX30 Device"
+          echo "=============================="
+          grep -A30 "define Device/h3c_magic-nx30-pro" target/linux/mediatek/image/filogic.mk || true
+
+          echo
+          echo "=============================="
+          echo "OpenWrt One Device"
+          echo "=============================="
+          grep -A30 "define Device/openwrt_one" target/linux/mediatek/image/filogic.mk || true
+
+          echo
+          echo "=============================="
+          echo "Search h3c_magic-nx30-pro"
+          echo "=============================="
+          grep -R "h3c_magic-nx30-pro" target/linux/mediatek || true
+
+          echo
+          echo "=============================="
+          echo "Search openwrt_one"
+          echo "=============================="
+          grep -R "openwrt_one" target/linux/mediatek || true
+
+          echo
+          echo "=============================="
+          echo "Device List"
+          echo "=============================="
+          grep "TARGET_DEVICES +=" target/linux/mediatek/image/*.mk || true
