@@ -1,0 +1,26 @@
+name: Check NX30Pro support
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Clone source
+        run: |
+          git clone -b 25.12 https://github.com/chasey-dev/immortalwrt-mt798x-rebase.git source
+
+      - name: Check NX30 files
+        run: |
+          cd source
+
+          echo "===== find nx30 ====="
+          find target/linux/mediatek -iname "*nx30*" || true
+
+          echo "===== grep nx30 ====="
+          grep -R "nx30" target/linux/mediatek || true
+
+          echo "===== grep h3c ====="
+          grep -R "h3c" target/linux/mediatek || true
