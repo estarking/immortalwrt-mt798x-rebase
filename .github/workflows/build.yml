@@ -1,0 +1,65 @@
+name: Build NX30Pro ImmortalWrt 25.12
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            build-essential \
+            clang \
+            flex \
+            bison \
+            g++ \
+            gawk \
+            gettext \
+            git \
+            libncurses-dev \
+            libssl-dev \
+            python3 \
+            rsync \
+            unzip \
+            zlib1g-dev \
+            file \
+            wget
+
+
+      - name: Update feeds
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+
+      - name: Load config
+        run: |
+          cp files/.config .config
+          make defconfig
+
+
+      - name: Download
+        run: |
+          make download -j$(nproc)
+
+
+      - name: Build
+        run: |
+          make -j$(nproc) V=s
+
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: NX30Pro-25.12-112M
+          path: |
+            bin/targets/mediatek/filogic/*
